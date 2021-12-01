@@ -17,12 +17,18 @@ namespace UdemyRabbitMQ.Subscriber
 
             var channel = connection.CreateModel();
 
-            //channel.QueueDeclare("hello-queue", true, false, false);
+            //channel.ExchangeDeclare("logs-fanout", ExchangeType.Fanout, true);
+
+            var randomQueueName = channel.QueueDeclare().QueueName;
+
+            channel.QueueBind(randomQueueName, "logs-fanout", "", null);
 
             channel.BasicQos(0, 1, false);
             var consumer = new EventingBasicConsumer(channel);
 
-            channel.BasicConsume("hello-queue", false, consumer);
+            channel.BasicConsume(randomQueueName, false, consumer);
+
+            Console.WriteLine("Loglar Dinleniyor...");
 
             consumer.Received += (object sender, BasicDeliverEventArgs e) =>
             {
