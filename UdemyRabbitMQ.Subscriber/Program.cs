@@ -1,6 +1,7 @@
 ﻿using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System;
+using System.IO;
 using System.Text;
 using System.Threading;
 
@@ -19,22 +20,22 @@ namespace UdemyRabbitMQ.Subscriber
 
             //channel.ExchangeDeclare("logs-fanout", ExchangeType.Fanout, true);
 
-            var randomQueueName = channel.QueueDeclare().QueueName;
-
-            channel.QueueBind(randomQueueName, "logs-fanout", "", null);
+            
 
             channel.BasicQos(0, 1, false);
             var consumer = new EventingBasicConsumer(channel);
 
-            channel.BasicConsume(randomQueueName, false, consumer);
+            var queueName = "direct-queue-Critical";
+            channel.BasicConsume(queueName, false, consumer);
 
             Console.WriteLine("Loglar Dinleniyor...");
 
             consumer.Received += (object sender, BasicDeliverEventArgs e) =>
             {
                 var message = Encoding.UTF8.GetString(e.Body.ToArray());
-                Console.WriteLine("Gelen Mesaj: " + message);
                 Thread.Sleep(500);
+                Console.WriteLine("Gelen Mesaj: " + message);
+                File.AppendAllText("log-critical.txt", message + "\n");
                 channel.BasicAck(e.DeliveryTag, false);
             };
 

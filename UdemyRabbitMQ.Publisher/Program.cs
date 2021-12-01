@@ -5,6 +5,14 @@ using System.Text;
 
 namespace UdemyRabbitMQ.Publisher
 {
+    public enum LogNames
+    {
+        Critical = 1,
+        Error = 2,
+        Warning = 3,
+        Info = 4
+    }
+
     class Program
     {
         static void Main(string[] args)
@@ -16,17 +24,32 @@ namespace UdemyRabbitMQ.Publisher
 
             var channel = connection.CreateModel();
 
-            channel.ExchangeDeclare("logs-fanout", ExchangeType.Fanout, true);
+            channel.ExchangeDeclare("logs-direct", ExchangeType.Direct, true);
+
+            Enum.GetNames(typeof(LogNames)).ToList().ForEach(u =>
+            {
+                var routeKey = $"route-{u}";
+
+                var queueName = $"direct-queue-{u}";
+                channel.QueueDeclare(queueName, true, false, false);
+
+                channel.QueueBind(queueName, "logs-direct", routeKey, null);
+            });
+
 
             Enumerable.Range(1, 50).ToList().ForEach(x =>
             {
-                string message = $"log {x}";
+                LogNames log = (LogNames)new Random().Next(1, 5);
+
+                string message = $"log {log}";
 
                 var messageBody = Encoding.UTF8.GetBytes(message);
 
-                channel.BasicPublish("logs-fanout", "", null, messageBody);
+                var routeKey = $"route-{log}";
 
-                Console.WriteLine($"Mesaj gönderilmiştir: {message}");
+                channel.BasicPublish("logs-direct", routeKey, null, messageBody);
+
+                Console.WriteLine($"Log gönderilmiştir: {message}");
 
             });
             Console.ReadLine();
