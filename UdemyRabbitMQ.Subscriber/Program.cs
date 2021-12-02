@@ -18,14 +18,15 @@ namespace UdemyRabbitMQ.Subscriber
 
             var channel = connection.CreateModel();
 
-            //channel.ExchangeDeclare("logs-fanout", ExchangeType.Fanout, true);
-
-            
-
             channel.BasicQos(0, 1, false);
             var consumer = new EventingBasicConsumer(channel);
 
-            var queueName = "direct-queue-Critical";
+            var queueName = channel.QueueDeclare().QueueName;
+
+            var routeKey = "*.*.Warning";
+
+            channel.QueueBind(queueName, "logs-topic", routeKey);
+
             channel.BasicConsume(queueName, false, consumer);
 
             Console.WriteLine("Loglar Dinleniyor...");
@@ -35,7 +36,6 @@ namespace UdemyRabbitMQ.Subscriber
                 var message = Encoding.UTF8.GetString(e.Body.ToArray());
                 Thread.Sleep(500);
                 Console.WriteLine("Gelen Mesaj: " + message);
-                File.AppendAllText("log-critical.txt", message + "\n");
                 channel.BasicAck(e.DeliveryTag, false);
             };
 
