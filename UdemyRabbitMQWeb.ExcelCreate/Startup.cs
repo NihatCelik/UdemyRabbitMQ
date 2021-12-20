@@ -30,6 +30,7 @@ namespace UdemyRabbitMQWeb.ExcelCreate
             });
 
             services.AddSingleton<RabbitMQClientService>();
+            services.AddSingleton<RabbitMQPublisher>();
 
             services.AddDbContext<AppDbContext>(options =>
             {
